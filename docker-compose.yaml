@@ -24,7 +24,7 @@ services:
     environment:
       POSTGRES_DB: taskids
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: sua_senha_forte_aqui
+      POSTGRES_PASSWORD: 10203040
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       DEBUG: "False"
