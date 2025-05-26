@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Task, TaskPhoto
 from .serializers import TaskSerializer, TaskPhotoSerializer
 from ai.services import validar_tarefa_com_ia
@@ -11,13 +12,14 @@ class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['title', 'completed', 'assigned_to', 'points']
 
     def get_queryset(self):
         return Task.objects.filter(assigned_to=self.request.user)
 
-
-class TaskPhotoUploadView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    class TaskPhotoUploadView(APIView):
+        permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, task_id):
         try:
@@ -36,9 +38,8 @@ class TaskPhotoUploadView(APIView):
         serializer = TaskPhotoSerializer(photo)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
-class TaskValidateAIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    class TaskValidateAIView(APIView):
+        permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, task_id):
         try:
@@ -63,3 +64,4 @@ class TaskValidateAIView(APIView):
             return Response({'message': result}, status=status.HTTP_200_OK)
         else:
             return Response({'message': result}, status=status.HTTP_400_BAD_REQUEST)
+
