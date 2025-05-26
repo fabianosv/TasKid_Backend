@@ -3,11 +3,10 @@ from django.db import models
 
 class User(AbstractUser):
     USER_TYPE_CHOICES = (
-        ('parent', 'Responsável'),
-        ('child', 'Filho(a)'),
+        ('guardian', 'Responsável'),
+        ('kid', 'Criança'),
     )
 
-    # Tipo do usuário: responsável ou filho(a)
     user_type = models.CharField(
         max_length=10,
         choices=USER_TYPE_CHOICES,
@@ -15,12 +14,21 @@ class User(AbstractUser):
         help_text="Selecione o tipo de usuário",
     )
 
-    # Campo adicional opcional para uma biografia curta
     bio = models.TextField(
         blank=True,
         null=True,
         verbose_name="Biografia",
         help_text="Descrição opcional do usuário",
+    )
+
+    # Um usuário do tipo 'kid' pode estar associado a um ou mais responsáveis
+    guardians = models.ManyToManyField(
+        'self',
+        symmetrical=False,
+        related_name='kids',
+        blank=True,
+        verbose_name="Responsáveis",
+        help_text="Responsáveis ligados a essa criança"
     )
 
     def __str__(self):
