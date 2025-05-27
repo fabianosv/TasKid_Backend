@@ -12,3 +12,8 @@ class RewardViewSet(viewsets.ModelViewSet):
 
 def get_queryset(self):
     return Reward.objects.filter(created_by=self.request.user)
+
+
+class ChildRewardViewSet(viewsets.ModelViewSet):
+    queryset = Reward.objects.all()
+    serializer_class = RewardSerializer

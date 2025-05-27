@@ -65,3 +65,10 @@ class TaskViewSet(viewsets.ModelViewSet):
         else:
             return Response({'message': result}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class TaskValidateAIView:
+    pass
+
+
+class TaskPhotoUploadView:
+    pass

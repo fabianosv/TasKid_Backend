@@ -2,7 +2,7 @@ from .base import *
 import os
 
 DEBUG = False
-ALLOWED_HOSTS = ['seudominio.com', 'www.seudominio.com']
+ALLOWED_HOSTS = ['*']
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

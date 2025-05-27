@@ -27,8 +27,3 @@ class UserSerializer(serializers.ModelSerializer):
             'guardians',
         ]
         read_only_fields = ['id', 'kids', 'guardians']
-
-    def validate_user_type(self, value):
-        if value not in ['guardian', 'kid']:
-            raise serializers.ValidationError("Tipo de usuário inválido.")
-        return value
