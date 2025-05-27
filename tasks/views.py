@@ -18,8 +18,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Task.objects.filter(assigned_to=self.request.user)
 
-    class TaskPhotoUploadView(APIView):
-        permission_classes = [permissions.IsAuthenticated]
+class TaskPhotoUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, task_id):
         try:
@@ -38,8 +38,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer = TaskPhotoSerializer(photo)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    class TaskValidateAIView(APIView):
-        permission_classes = [permissions.IsAuthenticated]
+class TaskValidateAIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, task_id):
         try:
@@ -64,4 +64,3 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response({'message': result}, status=status.HTTP_200_OK)
         else:
             return Response({'message': result}, status=status.HTTP_400_BAD_REQUEST)
-
