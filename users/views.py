@@ -1,9 +1,7 @@
-from rest_framework import viewsets, generics, permissions
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, generics
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import User
 from .serializers import UserSerializer
-from .permissions import IsGuardian
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

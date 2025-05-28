@@ -26,4 +26,4 @@ class UserSerializer(serializers.ModelSerializer):
             'kids',
             'guardians',
         ]
-        read_only_fields = ['id', 'kids', 'guardians']
+
