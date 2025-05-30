@@ -9,21 +9,25 @@ from django.conf import settings
 import os
 
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['title', 'completed', 'assigned_to', 'points']
+    permission_classes = []
 
     def get_queryset(self):
-        return Task.objects.filter(assigned_to=self.request.user)
+        return Task.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)  # ✅ Ensure 'many=True' for array response
+        return Response(serializer.data)
 
 class TaskPhotoUploadView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = []
 
     def post(self, request, task_id):
         try:
-            task = Task.objects.get(pk=task_id, assigned_to=request.user)
+            task = Task.objects.get(pk=task_id)
         except Task.DoesNotExist:
             return Response({'error': 'Tarefa não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -39,11 +43,11 @@ class TaskPhotoUploadView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class TaskValidateAIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = []
 
     def post(self, request, task_id):
         try:
-            task = Task.objects.get(pk=task_id, assigned_to=request.user)
+            task = Task.objects.get(pk=task_id)
         except Task.DoesNotExist:
             return Response({'error': 'Tarefa não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
 
