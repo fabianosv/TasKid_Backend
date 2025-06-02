@@ -1,16 +1,9 @@
-# core/dev.py
-
 from .base import *
 
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+# Mantém o DATABASES herdado do base.py (que já usa PostgreSQL via .env)
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
