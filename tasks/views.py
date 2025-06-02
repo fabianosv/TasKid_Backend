@@ -15,6 +15,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = []
 
     def get_queryset(self):
+        user_id = self.request.query_params.get("userId")
+        if user_id:
+            return Task.objects.filter(assigned_to=user_id)  # ✅ Filter tasks by user
         return Task.objects.all()
 
     def list(self, request, *args, **kwargs):
