@@ -15,6 +15,7 @@ class Task(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Criado em"))
     completed = models.BooleanField(default=False, verbose_name=_("Concluída"))
+    is_validated = models.BooleanField(default=False, verbose_name=_("Validada por IA"))  # <-- AQUI
 
     def __str__(self):
         return f"{self.title} ({'Concluída' if self.completed else 'Pendente'})"
