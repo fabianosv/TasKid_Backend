@@ -4,9 +4,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: taskids
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 10203040
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5433:5432"
 
@@ -22,12 +22,13 @@ services:
     depends_on:
       - db
     environment:
-      POSTGRES_DB: taskids
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 10203040
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_HOST: ${DB_HOST}
+      POSTGRES_PORT: ${DB_PORT}
       DEBUG: "False"
+      ALLOWED_HOSTS: "seudominio.com,www.seudominio.com"
 
 volumes:
   postgres_data:
