@@ -14,3 +14,9 @@ class KidsOfGuardianListView(generics.ListAPIView):
 
     def get_queryset(self):
      return self.request.user.kids.all()
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenObtainPairSerializer
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

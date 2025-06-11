@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import User
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 class UserSerializer(serializers.ModelSerializer):
     kids = serializers.PrimaryKeyRelatedField(
@@ -13,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
         help_text="Lista de IDs dos responsáveis associados à criança"
     )
 
-    class Meta:
+    class Meta:  # <-- Corrigido: agora está DENTRO do UserSerializer
         model = User
         fields = [
             'id',
@@ -26,3 +28,15 @@ class UserSerializer(serializers.ModelSerializer):
             'kids',
             'guardians',
         ]
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data.update({
+            'id': self.user.id,
+            'username': self.user.username,
+            'email': self.user.email,
+            'user_type': self.user.user_type,
+        })
+        return data

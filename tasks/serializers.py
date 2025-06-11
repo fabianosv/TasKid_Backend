@@ -1,21 +1,36 @@
 from rest_framework import serializers
-from .models import Task, TaskPhoto
-
-
-class TaskPhotoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TaskPhoto
-        fields = ['id', 'image', 'type', 'uploaded_at']
-        read_only_fields = ['id', 'uploaded_at']
+from .models import Task
+from users.models import User
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    photos = TaskPhotoSerializer(many=True, read_only=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
 
-    class Meta:
-        model = Task
-        fields = [
-            'id', 'title', 'description', 'assigned_to',
-            'created_at', 'completed', 'points', 'photos'
-        ]
-        read_only_fields = ['id', 'created_at']
+
+class Meta:
+    model = Task
+    fields = [
+        'id',
+        'title',
+        'description',
+        'created_by',
+        'created_by_name',
+        'assigned_to',
+        'assigned_to_name',
+        'due_date',
+        'status',
+        'created_at',
+        'submitted_at',
+        'validated_at',
+    ]
+    read_only_fields = ['status', 'created_at', 'submitted_at', 'validated_at']
+
+
+class TaskSubmitSerializer(serializers.Serializer):
+    task_id = serializers.IntegerField()
+
+
+class TaskValidateSerializer(serializers.Serializer):
+    task_id = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=['approve', 'reject'])

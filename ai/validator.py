@@ -1,27 +1,33 @@
-import cv2
-import numpy as np
-from django.core.files.storage import default_storage
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from tasks.models import Task
+from ai.validator import compare_images
 
-def compare_images(image_path_before, image_path_after):
-    try:
-        before_img = cv2.imdecode(np.frombuffer(default_storage.open(image_path_before).read(), np.uint8), cv2.IMREAD_COLOR)
-        after_img = cv2.imdecode(np.frombuffer(default_storage.open(image_path_after).read(), np.uint8), cv2.IMREAD_COLOR)
+class ImageValidationView(APIView):
+    def post(self, request, *args, **kwargs):
+        task_id = request.data.get('task_id')
+        if not task_id:
+            return Response({"error": "task_id é obrigatório"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if before_img is None or after_img is None:
-            return False
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            return Response({"error": "Tarefa não encontrada"}, status=status.HTTP_404_NOT_FOUND)
 
-        before_gray = cv2.cvtColor(before_img, cv2.COLOR_BGR2GRAY)
-        after_gray = cv2.cvtColor(after_img, cv2.COLOR_BGR2GRAY)
+        before_photo = task.photos.filter(photo_type='before').first()
+        after_photo = task.photos.filter(photo_type='after').first()
 
-        diff = cv2.absdiff(before_gray, after_gray)
-        _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
-        non_zero_count = np.count_nonzero(thresh)
+        if not before_photo or not after_photo:
+            return Response({"error": "São necessárias fotos do tipo 'before' e 'after'"}, status=status.HTTP_400_BAD_REQUEST)
 
-        total_pixels = diff.size
-        change_ratio = non_zero_count / total_pixels
+        # Use os caminhos relativos armazenados no modelo
+        image_path_before = before_photo.photo.name
+        image_path_after = after_photo.photo.name
 
-        return change_ratio > 0.05  # Mínimo de 5% de mudança
-    except Exception as e:
-        print(f"[Erro IA] Falha na comparação de imagens: {e}")
-        return False
+        valid = compare_images(image_path_before, image_path_after)
 
+        return Response({
+            "task_id": task_id,
+            "result": "approved" if valid else "rejected"
+        }, status=status.HTTP_200_OK)

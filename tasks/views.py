@@ -1,73 +1,76 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.views import APIView
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from .models import Task, TaskPhoto
-from .serializers import TaskSerializer, TaskPhotoSerializer
-from ai.services import validar_tarefa_com_ia
-from django.conf import settings
-import os
+from rest_framework.permissions import IsAuthenticated
+from django.utils import timezone
+from .models import Task
+from .serializers import TaskSerializer, TaskSubmitSerializer, TaskValidateSerializer
+from users.models import User
 
 class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['title', 'completed', 'assigned_to', 'points']
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user_id = self.request.query_params.get("userId")
-        if user_id:
-            return Task.objects.filter(assigned_to=user_id)  # ✅ Filter tasks by user
-        return Task.objects.all()
+        user = self.request.user
+        if user.user_type == 'child':
+            # A criança só vê suas tarefas
+            return Task.objects.filter(assigned_to=user)
+        elif user.user_type == 'responsible':
+            # Responsável vê as tarefas criadas por ele
+            return Task.objects.filter(created_by=user)
+        return Task.objects.none()
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)  # ✅ Ensure 'many=True' for array response
-        return Response(serializer.data)
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        task = self.get_object()
+        user = request.user
+        if user != task.assigned_to:
+            return Response({"detail": "Apenas a criança designada pode submeter a tarefa."},
+                            status=status.HTTP_403_FORBIDDEN)
+        if task.status != 'PENDING':
+            return Response({"detail": "Tarefa já submetida ou validada."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-class TaskPhotoUploadView(APIView):
-    permission_classes = []
+        task.submit()
+        return Response({"detail": "Tarefa submetida para aprovação."})
 
-    def post(self, request, task_id):
-        try:
-            task = Task.objects.get(pk=task_id)
-        except Task.DoesNotExist:
-            return Response({'error': 'Tarefa não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=True, methods=['post'])
+    def validate(self, request, pk=None):
+        task = self.get_object()
+        user = request.user
+        if user != task.created_by:
+            return Response({"detail": "Apenas o responsável pode validar a tarefa."},
+                            status=status.HTTP_403_FORBIDDEN)
 
-        if 'image' not in request.FILES or 'type' not in request.data:
-            return Response({'error': 'Imagem e tipo são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = TaskValidateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        photo = TaskPhoto.objects.create(
-            task=task,
-            image=request.FILES['image'],
-            type=request.data['type']
-        )
-        serializer = TaskPhotoSerializer(photo)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        action = serializer.validated_data['action']
+        if action == 'approve':
+            task.approve()
+            return Response({"detail": "Tarefa aprovada."})
+        elif action == 'reject':
+            task.reject()
+            return Response({"detail": "Tarefa rejeitada."})
 
-class TaskValidateAIView(APIView):
-    permission_classes = []
+    @action(detail=False, methods=['get'])
+    def check_block(self, request):
+        user = request.user
+        if user.user_type != 'child':
+            return Response({"detail": "Apenas crianças usam este endpoint."},
+                            status=status.HTTP_403_FORBIDDEN)
 
-    def post(self, request, task_id):
-        try:
-            task = Task.objects.get(pk=task_id)
-        except Task.DoesNotExist:
-            return Response({'error': 'Tarefa não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+        today = timezone.now().date()
+        pending_tasks = Task.objects.filter(
+            assigned_to=user,
+            due_date=today
+        ).exclude(status='APPROVED')
 
-        before_photos = task.photos.filter(type='before')
-        after_photos = task.photos.filter(type='after')
+        is_blocked = pending_tasks.exists()
+        # Atualiza flag do usuário (opcional)
+        user.is_blocked = is_blocked
+        user.save(update_fields=['is_blocked'])
 
-        if not before_photos.exists() or not after_photos.exists():
-            return Response({'message': 'Imagens insuficientes para validação.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        before_path = os.path.join(settings.MEDIA_ROOT, before_photos.last().image.name)
-        after_path = os.path.join(settings.MEDIA_ROOT, after_photos.last().image.name)
-
-        is_valid, result = validar_tarefa_com_ia(before_path, after_path)
-
-        if is_valid:
-            task.completed = True
-            task.save()
-            return Response({'message': result}, status=status.HTTP_200_OK)
-        else:
-            return Response({'message': result}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"is_blocked": is_blocked})

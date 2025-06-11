@@ -1,54 +1,56 @@
-from django.conf import settings
-from django.db import models
-from django.utils.translation import gettext_lazy as _
+# tasks/models.py
 
+from django.db import models
+from users.models import User
+from django.utils import timezone
 
 class Task(models.Model):
-    title = models.CharField(max_length=255, verbose_name=_("Título"))
-    description = models.TextField(verbose_name=_("Descrição"))
-    points = models.PositiveIntegerField(default=10, verbose_name=_("Pontos"))
+    STATUS_CHOICES = [
+        ('PENDING', 'Pendente'),
+        ('SUBMITTED', 'Aguardando Aprovação'),
+        ('APPROVED', 'Aprovada'),
+        ('REJECTED', 'Reprovada'),
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_tasks',
+        limit_choices_to={'user_type': 'responsible'},
+        help_text='Usuário responsável que criou a tarefa'
+    )
     assigned_to = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
-        related_name='tasks',
-        verbose_name=_("Atribuído a")
+        related_name='assigned_tasks',
+        limit_choices_to={'user_type': 'child'},
+        help_text='Criança para quem a tarefa foi atribuída'
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Criado em"))
-    completed = models.BooleanField(default=False, verbose_name=_("Concluída"))
-    is_validated = models.BooleanField(default=False, verbose_name=_("Validada por IA"))  # <-- AQUI
-
-    def __str__(self):
-        return f"{self.title} ({'Concluída' if self.completed else 'Pendente'})"
+    due_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    validated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = _("Tarefa")
-        verbose_name_plural = _("Tarefas")
-        ordering = ['-created_at']
+        ordering = ['due_date', 'status']
 
+    def submit(self):
+        self.status = 'SUBMITTED'
+        self.submitted_at = timezone.now()
+        self.save()
 
-class TaskPhoto(models.Model):
-    class PhotoType(models.TextChoices):
-        BEFORE = 'before', _('Antes')
-        AFTER = 'after', _('Depois')
+    def approve(self):
+        self.status = 'APPROVED'
+        self.validated_at = timezone.now()
+        self.save()
 
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        related_name='photos',
-        verbose_name=_("Tarefa")
-    )
-    image = models.ImageField(upload_to='task_photos/', verbose_name=_("Imagem"))
-    type = models.CharField(
-        max_length=10,
-        choices=PhotoType.choices,
-        verbose_name=_("Tipo")
-    )
-    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Enviado em"))
+    def reject(self):
+        self.status = 'REJECTED'
+        self.validated_at = timezone.now()
+        self.save()
 
     def __str__(self):
-        return f"{self.task.title} - {self.get_type_display()}"
-
-    class Meta:
-        verbose_name = _("Foto da Tarefa")
-        verbose_name_plural = _("Fotos das Tarefas")
-        ordering = ['-uploaded_at']
+        return f"{self.title} - {self.assigned_to.username}"
