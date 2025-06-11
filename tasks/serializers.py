@@ -32,5 +32,4 @@ class TaskSubmitSerializer(serializers.Serializer):
 
 
 class TaskValidateSerializer(serializers.Serializer):
-    task_id = serializers.IntegerField()
     action = serializers.ChoiceField(choices=['approve', 'reject'])
