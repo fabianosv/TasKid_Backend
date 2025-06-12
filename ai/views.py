@@ -6,5 +6,4 @@ from rest_framework import status
 
 class ImageValidationView(APIView):
     def post(self, request, *args, **kwargs):
-        # Exemplo de resposta fictícia
         return Response({"valid": True}, status=status.HTTP_200_OK)
