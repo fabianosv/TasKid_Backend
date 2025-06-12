@@ -16,7 +16,7 @@ def create_initial_user(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('users', '0001_initial'),
+        ('users', '0003_initial'),
     ]
 
     operations = [

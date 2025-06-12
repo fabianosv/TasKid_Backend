@@ -29,7 +29,7 @@ class Task(models.Model):
         limit_choices_to={'user_type': 'child'},
         help_text='Criança para quem a tarefa foi atribuída'
     )
-    due_date = models.DateField()
+    due_date = models.DateField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(null=True, blank=True)

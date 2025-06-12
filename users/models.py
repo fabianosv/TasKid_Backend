@@ -12,7 +12,7 @@ class User(AbstractUser):
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
     bio = models.TextField(blank=True)
     kids = models.ManyToManyField('self', symmetrical=False, related_name='guardians', blank=True)
-    is_blocked = models.BooleanField(default=False, help_text="Bloqueado de acessar o app?")
+    is_blocked = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username
