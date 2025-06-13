@@ -20,13 +20,18 @@ User = get_user_model()
 def register_user(request):
     data = request.data
 
-    if User.objects.filter(username=data['username']).exists():
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(username=username).exists():
         return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create(
-        username=data['username'],
-        email=data['email'],  # ✅ Add email field
-        password=make_password(data['password']),
+        username=username,
+        password=make_password(password),
         user_type=data.get('user_type', 'guardian')
     )
 
@@ -36,8 +41,8 @@ def register_user(request):
         'message': 'User registered successfully',
         'token': token.key,
         'user_id': user.pk,
-        'email': user.email
     }, status=status.HTTP_201_CREATED)
+
 
 
 # ✅ Login de usuário com token
@@ -46,14 +51,22 @@ class CustomAuthToken(ObtainAuthToken):
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-        token = Token.objects.get(key=response.data['token'])
-        user = token.user
-        return Response({
-            'token': token.key,
-            'user_id': user.pk,
-            'email': user.email,
-            'user_type': user.user_type,
-        })
+        token_key = response.data.get('token')
+
+        if not token_key:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            token = Token.objects.get(key=token_key)
+            user = token.user
+            return Response({
+                'token': token.key,
+                'user_id': user.pk,
+                'user_type': user.user_type,
+            })
+        except Token.DoesNotExist:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 # ✅ Lista/CRUD completo de usuários (admin ou uso interno)
