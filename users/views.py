@@ -80,7 +80,7 @@ class UserViewSet(viewsets.ModelViewSet):
 # ✅ Lista de crianças do responsável autenticado
 class KidsOfGuardianListView(generics.ListAPIView):
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return self.request.user.kids.all()
+        return User.objects.filter(user_type='kid')
