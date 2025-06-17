@@ -22,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'user_type',
-            'bio',
+            'age',
             'kids',
             'guardians',
         ]

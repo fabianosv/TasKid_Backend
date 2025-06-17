@@ -14,11 +14,11 @@ class User(AbstractUser):
         help_text="Selecione o tipo de usuário",
     )
 
-    bio = models.TextField(
+    age = models.PositiveIntegerField(
         blank=True,
         null=True,
-        verbose_name="Biografia",
-        help_text="Descrição opcional do usuário",
+        verbose_name="Idade",
+        help_text="Idade do usuário (opcional)",
     )
 
     # Um usuário do tipo 'kid' pode estar associado a um ou mais responsáveis
